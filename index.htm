@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cricket ML Analytics Dashboard Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-heatmap@0.3.1/build/Chart.HeatMap.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        body.dark-mode {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .api-section {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px auto;
+            max-width: 600px;
+        }
+        .api-section input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            margin-top: 8px;
+        }
+        .theme-toggle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: all 0.3s;
+        }
+        .theme-toggle:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .upload-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .dark-mode .upload-section {
+            background: #0f3460;
+            color: #e8e8e8;
+        }
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8f9ff;
+        }
+        .dark-mode .upload-area {
+            background: #16213e;
+            border-color: #4a90e2;
+        }
+        .upload-area:hover {
+            background: #e8ebff;
+            border-color: #764ba2;
+            transform: scale(1.02);
+        }
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        #fileInput {
+            display: none;
+        }
+        .progress-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+            display: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .file-count {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+        .dark-mode .file-count {
+            background: #16213e;
+        }
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            margin: 5px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .weather-card {
+            background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+            border-radius: 15px;
+            padding: 25px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+            display: none;
+        }
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .weather-item {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+        }
+        .weather-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .ml-features-section {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .feature-card {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.3);
+        }
+        .feature-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .feature-label {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+        }
+        .dark-mode .stat-card {
+            background: #0f3460;
+            color: #e8e8e8;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+        .stat-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            border-bottom: 2px solid #e8ebff;
+            padding-bottom: 10px;
+        }
+        .dark-mode .stat-card h3 {
+            color: #4a90e2;
+            border-bottom-color: #2c3e50;
+        }
+        .stat-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .dark-mode .stat-item {
+            border-bottom-color: #2c3e50;
+        }
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .dark-mode .stat-label {
+            color: #a0a0a0;
+        }
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            margin-top: 5px;
+        }
+        .dark-mode .stat-value {
+            color: #e8e8e8;
+        }
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .dark-mode .chart-container {
+            background: #0f3460;
+        }
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            margin-top: 20px;
+        }
+        .heatmap-wrapper {
+            height: 500px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .dark-mode .loading {
+            background: #0f3460;
+            color: #e8e8e8;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hidden {
+            display: none;
+        }
+        .filters-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .dark-mode .filters-section {
+            background: #0f3460;
+            color: #e8e8e8;
+        }
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .filter-item label {
+            font-weight: 600;
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .dark-mode .filter-item label {
+            color: #4a90e2;
+        }
+        .filter-item select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e8ebff;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .dark-mode .filter-item select {
+            background: #16213e;
+            border-color: #2c3e50;
+            color: #e8e8e8;
+        }
+        .team-card {
+            background: #f8f9ff;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 5px solid #667eea;
+            transition: all 0.3s;
+        }
+        .dark-mode .team-card {
+            background: #16213e;
+            border-left-color: #4a90e2;
+        }
+        .team-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .analysis-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        .dark-mode .analysis-section {
+            background: #0f3460;
+            color: #e8e8e8;
+        }
+        .analysis-section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .dark-mode .analysis-section h2 {
+            color: #4a90e2;
+            border-bottom-color: #4a90e2;
+        }
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .feature-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+            <h1>🏏 Cricket ML Analytics Dashboard Pro</h1>
+            <p>Handle 30k+ JSON Files | Win Probability | Heatmaps | ML Features</p>
+            <div class="api-section">
+                <label style="color: white; font-weight: 600;">🌤️ Weather API Key (OpenWeatherMap - Optional):</label>
+                <input type="text" id="weatherApiKey" placeholder="Enter API key for weather data" />
+                <small style="color: rgba(255,255,255,0.8); display: block; margin-top: 5px;">
+                    Get free key: openweathermap.org/api
+                </small>
+            </div>
+        </div>
+        <div class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <h3>Upload Cricket Match JSON Files</h3>
+                <p style="color: #666; margin-top: 10px;">Supports 30,000+ files with batch processing</p>
+                <p style="color: #999; margin-top: 5px; font-size: 0.9em;">Click to browse or drag & drop files</p>
+                <input type="file" id="fileInput" accept=".json" multiple>
+            </div>
+            <div class="file-count" id="fileCount" style="display: none;"></div>
+            <div class="progress-container" id="progressContainer">
+                <div id="progressText">Processing files...</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%">0%</div>
+                </div>
+                <div id="batchInfo" style="margin-top: 10px; font-size: 0.9em;"></div>
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="analyzeBtn" disabled>
+                    🚀 Analyze & Generate ML Features
+                </button>
+                <button class="btn btn-success" id="exportStatsBtn" disabled>
+                    📊 Export Statistics CSV
+                </button>
+                <button class="btn btn-success" id="exportMLBtn" disabled>
+                    🤖 Export ML Features CSV
+                </button>
+                <button class="btn btn-danger" id="clearBtn" style="display: none;">
+                    🗑️ Clear All
+                </button>
+            </div>
+        </div>
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <h3 id="loadingText">Processing data...</h3>
+            <p id="loadingDetails" style="margin-top: 10px; color: #666;"></p>
+        </div>
+        <div id="results" class="hidden">
+            <!-- Weather Card -->
+            <div class="weather-card" id="weatherCard">
+                <h2>☁️ Current Weather Conditions</h2>
+                <div class="weather-grid" id="weatherGrid"></div>
+            </div>
+            <!-- ML Features Section -->
+            <div class="ml-features-section">
+                <h2 style="margin-bottom: 10px;">🤖 Machine Learning Features Generated</h2>
+                <p style="opacity: 0.9; margin-bottom: 20px;">
+                    All 34 features extracted and ready for predictive modeling
+                </p>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-label">Match-State</div>
+                        <div class="feature-value">8</div>
+                        <div style="font-size: 0.85em; opacity: 0.8;">balls, runs, wickets, run rates, phase</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-label">Rolling Player Stats</div>
+                        <div class="feature-value">7</div>
+                        <div style="font-size: 0.85em; opacity: 0.8;">recent form, averages, economy</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-label">Head-to-Head</div>
+                        <div class="feature-value">3</div>
+                        <div style="font-size: 0.85em; opacity: 0.8;">batter vs bowler history</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-label">Venue Features</div>
+                        <div class="feature-value">3</div>
+                        <div style="font-size: 0.85em; opacity: 0.8;">ground characteristics</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-label">Derived Flags</div>
+                        <div class="feature-value">5</div>
+                        <div style="font-size: 0.85em; opacity: 0.8;">extras, pressure, momentum</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-label">Player Status</div>
+                        <div class="feature-value">4</div>
+                        <div style="font-size: 0.85em; opacity: 0.8;">new batsman, over number</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-label">Target Variables</div>
+                        <div class="feature-value">4</div>
+                        <div style="font-size: 0.85em; opacity: 0.8;">next ball, boundary, wicket</div>
+                    </div>
+                    <div class="feature-card" style="background: rgba(255,255,255,0.4);">
+                        <div class="feature-label">Total Features</div>
+                        <div class="feature-value" id="totalFeatures">34</div>
+                        <div style="font-size: 0.85em; opacity: 0.8;">✅ Ready for ML</div>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 25px; padding: 15px; background: rgba(255,255,255,0.2); border-radius: 10px;">
+                    <strong id="mlRowCount">0</strong> data rows generated for model training
+                </div>
+            </div>
+            <!-- Filters -->
+            <div class="filters-section">
+                <h3 style="color: #667eea; margin-bottom: 15px;">🔍 Filters</h3>
+                <div class="filter-grid">
+                    <div class="filter-item">
+                        <label>Filter by Team</label>
+                        <select id="teamFilter" onchange="applyFilters()">
+                            <option value="all">All Teams</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label>Filter by Venue</label>
+                        <select id="venueFilter" onchange="applyFilters()">
+                            <option value="all">All Venues</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <!-- Stats Overview -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>📊 Overview</h3>
+                    <div class="stat-item">
+                        <div class="stat-label">Total Matches</div>
+                        <div class="stat-value" id="totalMatches">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Total Teams</div>
+                        <div class="stat-value" id="totalTeams">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Total Venues</div>
+                        <div class="stat-value" id="totalVenues">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <h3>🎯 Scoring Stats</h3>
+                    <div class="stat-item">
+                        <div class="stat-label">Average Score</div>
+                        <div class="stat-value" id="avgScore">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Highest Score</div>
+                        <div class="stat-value" id="highScore">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Lowest Score</div>
+                        <div class="stat-value" id="lowScore">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <h3>⚡ Powerplay (1-6 Overs)</h3>
+                    <div class="stat-item">
+                        <div class="stat-label">Average</div>
+                        <div class="stat-value" id="avg6">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Range</div>
+                        <div class="stat-value" id="range6">0-0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <h3>📈 Middle (7-15 Overs)</h3>
+                    <div class="stat-item">
+                        <div class="stat-label">Average at 10</div>
+                        <div class="stat-value" id="avg10">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Average at 15</div>
+                        <div class="stat-value" id="avg15">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <h3>🔥 Death (16-20 Overs)</h3>
+                    <div class="stat-item">
+                        <div class="stat-label">Average Final Score</div>
+                        <div class="stat-value" id="avg20">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Range</div>
+                        <div class="stat-value" id="range20">0-0</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Charts -->
+            <div class="chart-container">
+                <h2 style="color: #667eea; margin-bottom: 20px;">📈 Run Progression Analysis</h2>
+                <div class="chart-wrapper">
+                    <canvas id="progressionChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container">
+                <h2 style="color: #667eea; margin-bottom: 20px;">🏆 Team Performance Comparison</h2>
+                <div class="chart-wrapper">
+                    <canvas id="teamChart"></canvas>
+                </div>
+            </div>
+            <!-- Win Probability Chart -->
+            <div class="chart-container">
+                <h2 style="color: #667eea; margin-bottom: 20px;">🎯 Win Probability by Score at Over 10</h2>
+                <div class="chart-wrapper">
+                    <canvas id="winProbChart"></canvas>
+                </div>
+                <p style="margin-top: 15px; font-size: 0.95em; color: #666;">
+                    Based on historical data: higher scores at 10 overs correlate with higher win rates.
+                </p>
+            </div>
+            <!-- Heatmap -->
+            <!-- <div class="chart-container">
+                <h2 style="color: #667eea; margin-bottom: 20px;">🔥 Over-by-Over Scoring Heatmap</h2>
+                <div class="chart-wrapper heatmap-wrapper">
+                    <canvas id="heatmapChart"></canvas>
+                </div>
+                <p style="margin-top: 15px; font-size: 0.95em; color: #666;">
+                    Color intensity = average runs scored in that over across all matches.
+                </p>
+            </div> -->
+            <!-- Team Rankings -->
+            <div class="analysis-section">
+                <h2>🏆 Team Rankings</h2>
+                <div id="teamRankings"></div>
+            </div>
+            <!-- Venue Stats -->
+            <div class="analysis-section">
+                <h2>🏟️ Venue Statistics</h2>
+                <div id="venueStats"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+document.addEventListener('DOMContentLoaded', () => {
+    let uploadedFiles = [];
+    let mlFeatures = [];
+    let analysisData = {};
+    const BATCH_SIZE = 500;
+    const MAX_HISTORY = 50;
+    const WEATHER_CACHE = new Map();
+    let abortController = null;
+
+    // Helper: safely update textContent
+    function safeSetText(id, text) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.textContent = text;
+        } else {
+            console.warn(`[DOM Warning] Element #${id} not found.`);
+        }
+    }
+
+    // Helper: safely set innerHTML
+    function safeSetHTML(id, html) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.innerHTML = html;
+        } else {
+            console.warn(`[DOM Warning] Element #${id} not found.`);
+        }
+    }
+
+    // Helper: safely show/hide
+    function safeShow(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('hidden');
+        else console.warn(`[DOM Warning] Element #${id} not found.`);
+    }
+
+    function safeHide(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    }
+
+    // Elements (only critical ones used outside safe helpers)
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const fileCount = document.getElementById('fileCount');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const exportStatsBtn = document.getElementById('exportStatsBtn');
+    const exportMLBtn = document.getElementById('exportMLBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const loading = document.getElementById('loading');
+    const results = document.getElementById('results');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const batchInfo = document.getElementById('batchInfo');
+    const loadingText = document.getElementById('loadingText');
+    const loadingDetails = document.getElementById('loadingDetails');
+
+    // Upload handlers
+    if (uploadArea) {
+        uploadArea.addEventListener('click', () => fileInput?.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#764ba2';
+            uploadArea.style.transform = 'scale(1.02)';
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#667eea';
+            uploadArea.style.transform = 'scale(1)';
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#667eea';
+            uploadArea.style.transform = 'scale(1)';
+            handleFiles(e.dataTransfer.files);
+        });
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+    }
+
+    function handleFiles(files) {
+        uploadedFiles = Array.from(files).filter(f => f.name.endsWith('.json'));
+        if (uploadedFiles.length === 0) {
+            alert('Please select valid JSON files!');
+            return;
+        }
+        if (fileCount) {
+            fileCount.style.display = 'block';
+            fileCount.innerHTML = `
+                <strong>✅ ${uploadedFiles.length.toLocaleString()} files selected</strong><br>
+                <small>Estimated processing time: ~${Math.ceil(uploadedFiles.length / 500)} seconds</small>
+            `;
+        }
+        if (analyzeBtn) analyzeBtn.disabled = false;
+        if (clearBtn) clearBtn.style.display = 'inline-block';
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            if (abortController) abortController.abort();
+            uploadedFiles = [];
+            if (fileInput) fileInput.value = '';
+            if (fileCount) fileCount.style.display = 'none';
+            if (analyzeBtn) analyzeBtn.disabled = true;
+            if (clearBtn) clearBtn.style.display = 'none';
+            if (progressContainer) progressContainer.style.display = 'none';
+            safeHide('results');
+            if (exportStatsBtn) exportStatsBtn.disabled = true;
+            if (exportMLBtn) exportMLBtn.disabled = true;
+        });
+    }
+
+    if (analyzeBtn) {
+        analyzeBtn.addEventListener('click', () => {
+            if (abortController) abortController.abort();
+            abortController = new AbortController();
+            analyzeData({ signal: abortController.signal });
+        });
+    }
+
+    if (exportStatsBtn) exportStatsBtn.addEventListener('click', exportStatistics);
+    if (exportMLBtn) exportMLBtn.addEventListener('click', exportMLData);
+
+    async function analyzeData({ signal }) {
+        mlFeatures = [];
+        analysisData = {
+            teamStats: {}, venueStats: {}, overStats: {6: [], 10: [], 15: [], 20: []}, allScores: [],
+            overRuns: Array(20).fill(0).map(() => []),
+            scoreAt10: []
+        };
+
+        if (loading) loading.style.display = 'block';
+        safeHide('results');
+        if (progressContainer) progressContainer.style.display = 'block';
+        if (analyzeBtn) analyzeBtn.disabled = true;
+        if (exportStatsBtn) exportStatsBtn.disabled = true;
+        if (exportMLBtn) exportMLBtn.disabled = true;
+
+        const totalBatches = Math.ceil(uploadedFiles.length / BATCH_SIZE);
+        let validMatches = 0;
+
+        try {
+            for (let i = 0; i < totalBatches; i++) {
+                if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+                const start = i * BATCH_SIZE;
+                const end = Math.min(start + BATCH_SIZE, uploadedFiles.length);
+                const batch = uploadedFiles.slice(start, end);
+
+                if (progressText) progressText.textContent = `Processing batch ${i + 1} of ${totalBatches}`;
+                if (batchInfo) batchInfo.textContent = `Files ${start + 1}-${end} of ${uploadedFiles.length}`;
+                const progress = Math.round(((i + 1) / totalBatches) * 100);
+                if (progressFill) {
+                    progressFill.style.width = `${progress}%`;
+                    progressFill.textContent = `${progress}%`;
+                }
+
+                const batchResults = await processBatch(batch, signal);
+                validMatches += batchResults.validCount;
+                await new Promise(r => setTimeout(r, 10));
+            }
+
+            if (validMatches === 0) throw new Error('No valid match data found!');
+            if (loadingText) loadingText.textContent = 'Generating ML features...';
+            await generateMLFeaturesFromAll(signal);
+            processFinalStats();
+            populateFilters();
+
+            const firstVenue = Object.keys(analysisData.venueStats)[0];
+            if (firstVenue) await fetchWeather(firstVenue);
+
+            safeSetText('mlRowCount', mlFeatures.length.toLocaleString());
+            createCharts();
+
+            if (loading) loading.style.display = 'none';
+            safeShow('results');
+            if (exportStatsBtn) exportStatsBtn.disabled = false;
+            if (exportMLBtn) exportMLBtn.disabled = false;
+
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                console.error(err);
+                alert(err.message || 'An error occurred during analysis.');
+            }
+            resetUI();
+        }
+    }
+
+    function resetUI() {
+        if (loading) loading.style.display = 'none';
+        if (progressContainer) progressContainer.style.display = 'none';
+        if (analyzeBtn) analyzeBtn.disabled = false;
+    }
+
+    async function processBatch(batch, signal) {
+        let validCount = 0;
+        for (const file of batch) {
+            if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+            try {
+                const text = await file.text();
+                const data = JSON.parse(text);
+                if (!data.info || !data.innings) continue;
+                processMatchForStats(data); // Note: this is synchronous
+                validCount++;
+            } catch (e) {
+                console.warn('Skipping invalid file:', file.name, e);
+            }
+        }
+        return { validCount };
+    }
+
+    function processMatchForStats(match) {
+        const venue = match.info?.venue || 'Unknown';
+        if (!analysisData.venueStats[venue]) analysisData.venueStats[venue] = [];
+        for (const inning of match.innings || []) {
+            const team = inning.team || 'unknown';
+            if (!analysisData.teamStats[team]) {
+                analysisData.teamStats[team] = {6: [], 10: [], 15: [], 20: []};
+            }
+            let total = 0;
+            const runsAt = {6: 0, 10: 0, 15: 0, 20: 0};
+            const overRuns = Array(20).fill(0);
+            for (let i = 0; i < (inning.overs?.length || 0); i++) {
+                const over = inning.overs[i];
+                let overTotal = 0;
+                for (const d of over.deliveries || []) {
+                    const r = d.runs?.total || 0;
+                    total += r;
+                    overTotal += r;
+                }
+                const ov = i + 1;
+                if (ov <= 20) overRuns[ov - 1] = overTotal;
+                if (ov <= 6) runsAt[6] = total;
+                if (ov <= 10) runsAt[10] = total;
+                if (ov <= 15) runsAt[15] = total;
+                if (ov <= 20) runsAt[20] = total;
+            }
+            [6,10,15,20].forEach(m => {
+                analysisData.teamStats[team][m].push(runsAt[m]);
+                analysisData.overStats[m].push(runsAt[m]);
+            });
+            analysisData.allScores.push(runsAt[20]);
+            analysisData.venueStats[venue].push({ team, runs: runsAt });
+            overRuns.forEach((runs, idx) => {
+                analysisData.overRuns[idx].push(runs);
+            });
+            if (match.innings.length === 2) {
+                const firstInn = calculateInningsTotal(match.innings[0]);
+                const secondInn = runsAt[20];
+                const score10 = runsAt[10];
+                analysisData.scoreAt10.push({ score: score10, won: secondInn > firstInn });
+            }
+        }
+    }
+
+    async function generateMLFeaturesFromAll(signal) {
+        mlFeatures = [];
+        let processed = 0;
+        const total = uploadedFiles.length;
+        for (const file of uploadedFiles) {
+            if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+            try {
+                const text = await file.text();
+                const match = JSON.parse(text);
+                if (!match.innings) continue;
+                generateMLFeaturesFromMatch(match, signal); // sync
+                processed++;
+                if (processed % 100 === 0 && loadingDetails) {
+                    loadingDetails.textContent = `ML: ${processed}/${total} matches...`;
+                    await new Promise(r => setTimeout(r, 5));
+                }
+            } catch (e) {
+                // skip
+            }
+        }
+    }
+
+    function generateMLFeaturesFromMatch(match, signal) {
+        const deliveryHistory = [];
+        const batsmanHistory = new Map();
+        const bowlerHistory = new Map();
+        for (const inning of match.innings || []) {
+            let ballsElapsed = 0;
+            let runsSoFar = 0;
+            let wicketsSoFar = 0;
+            let partnershipBalls = 0;
+            const targetScore = match.innings[0] ? calculateInningsTotal(match.innings[0]) : 0;
+            for (const over of inning.overs || []) {
+                for (const delivery of over.deliveries || []) {
+                    ballsElapsed++;
+                    runsSoFar += delivery.runs?.total || 0;
+                    const isWicket = (delivery.wickets?.length || 0) > 0;
+                    if (isWicket) {
+                        wicketsSoFar++;
+                        partnershipBalls = 0;
+                    } else {
+                        partnershipBalls++;
+                    }
+                    addToRollingMap(batsmanHistory, delivery.batter, delivery, MAX_HISTORY);
+                    addToRollingMap(bowlerHistory, delivery.bowler, delivery, MAX_HISTORY);
+                    deliveryHistory.push(delivery);
+                    const feature = extractFeatures({
+                        delivery, over, inning, match,
+                        ballsElapsed, runsSoFar, wicketsSoFar, partnershipBalls,
+                        targetScore, deliveryHistory,
+                        batsmanHistory, bowlerHistory
+                    });
+                    mlFeatures.push(feature);
+                }
+            }
+        }
+    }
+
+    function addToRollingMap(map, key, value, maxSize) {
+        if (!map.has(key)) map.set(key, []);
+        const arr = map.get(key);
+        arr.push(value);
+        if (arr.length > maxSize) arr.shift();
+    }
+
+    function extractFeatures({
+        delivery, over, inning, match,
+        ballsElapsed, runsSoFar, wicketsSoFar, partnershipBalls,
+        targetScore, deliveryHistory,
+        batsmanHistory, bowlerHistory
+    }) {
+        const batsman = delivery.batter || 'unknown';
+        const bowler = delivery.bowler || 'unknown';
+        const overIdx = over.over || 0;
+        const currentRunRate = ballsElapsed > 0 ? (runsSoFar / ballsElapsed) * 6 : 0;
+        const requiredRunRate = targetScore > 0 && ballsElapsed < 120 ?
+            ((targetScore - runsSoFar + 1) / (120 - ballsElapsed)) * 6 : 0;
+        const phase = overIdx < 6 ? 'powerplay' : overIdx < 15 ? 'middle' : 'death';
+        const bHist = batsmanHistory.get(batsman) || [];
+        const bowHist = bowlerHistory.get(bowler) || [];
+        const last10 = bHist.slice(-10);
+        const last20 = bHist.slice(-20);
+        const last50 = bHist.slice(-50);
+        const bowLast20 = bowHist.slice(-20);
+        const h2h = deliveryHistory.filter(d => d.batter === batsman && d.bowler === bowler);
+        const batsmanRpbLast10 = last10.length ? last10.reduce((s,d)=>s+(d.runs?.batter||0),0)/last10.length : 0;
+        const batsmanSrLast50 = last50.length ? (last50.reduce((s,d)=>s+(d.runs?.batter||0),0)/last50.length)*100 : 0;
+        const batsmanDotPctLast20 = last20.length ? last20.filter(d=>(d.runs?.batter||0)===0).length/last20.length*100 : 0;
+        const bowlerEconLast20 = bowLast20.length ? (bowLast20.reduce((s,d)=>s+(d.runs?.total||0),0)/bowLast20.length)*6 : 0;
+        const bowlerWicketRateLast50 = bowHist.slice(-50).filter(d=>d.wickets?.length>0).length;
+        const careerBatsmanRuns = bHist.reduce((s,d)=>s+(d.runs?.batter||0),0);
+        const careerBatsmanBalls = bHist.length;
+        const batsmanCareerAvg = careerBatsmanBalls ? careerBatsmanRuns / careerBatsmanBalls : 0;
+        const careerBowlerRuns = bowHist.reduce((s,d)=>s+(d.runs?.total||0),0);
+        const careerBowlerBalls = bowHist.length;
+        const bowlerCareerEcon = careerBowlerBalls ? (careerBowlerRuns / careerBowlerBalls) * 6 : 0;
+        const batterVsBowlerRpb = h2h.length ? h2h.reduce((s,d)=>s+(d.runs?.batter||0),0)/h2h.length : 0;
+        const batterVsBowlerDismissalRate = h2h.length ? h2h.filter(d=>d.wickets?.length>0).length/h2h.length : 0;
+        const venueAvgFirstInnings = targetScore || 150;
+        const venueBoundaryRate = 0.15;
+        const venueAvgScore = 160;
+        const hasExtras = (delivery.runs?.extras || 0) > 0 ? 1 : 0;
+        const runsLast5Balls = deliveryHistory.slice(-5).reduce((s,d)=>s+(d.runs?.total||0),0);
+        const pressureIndex = Math.max(0, requiredRunRate - currentRunRate);
+        const isNewBatsman = bHist.length === 1 ? 1 : 0;
+        const batsmanStatusFlag = bHist.length < 5 ? 1 : 0;
+        const bowlerStatusFlag = bowHist.length < 6 ? 1 : 0;
+        const bowlerOverNumber = Math.floor(bowHist.length / 6);
+        return {
+            balls_elapsed: ballsElapsed,
+            runs_so_far: runsSoFar,
+            wickets_so_far: wicketsSoFar,
+            current_run_rate: currentRunRate.toFixed(2),
+            required_run_rate: requiredRunRate.toFixed(2),
+            phase,
+            is_powerplay: overIdx < 6 ? 1 : 0,
+            is_death_over: overIdx >= 15 ? 1 : 0,
+            batsman_rpb_last_10balls: batsmanRpbLast10.toFixed(3),
+            batsman_sr_last_50balls: batsmanSrLast50.toFixed(2),
+            batsman_dot_pct_last_20balls: batsmanDotPctLast20.toFixed(2),
+            bowler_econ_last_20balls: bowlerEconLast20.toFixed(2),
+            bowler_wicket_rate_last_50balls: bowlerWicketRateLast50,
+            batsman_career_avg: batsmanCareerAvg.toFixed(3),
+            bowler_career_econ: bowlerCareerEcon.toFixed(2),
+            batter_vs_bowler_rpb: batterVsBowlerRpb.toFixed(3),
+            batter_vs_bowler_dismissal_rate: batterVsBowlerDismissalRate.toFixed(3),
+            matchup_balls_faced: h2h.length,
+            venue_avg_first_innings: venueAvgFirstInnings,
+            venue_boundary_rate: venueBoundaryRate.toFixed(3),
+            venue_avg_score: venueAvgScore,
+            has_extras: hasExtras,
+            runs_last_5balls: runsLast5Balls,
+            pressure_index: pressureIndex.toFixed(2),
+            partnership_balls: partnershipBalls,
+            batsman_status_flag: batsmanStatusFlag,
+            bowler_status_flag: bowlerStatusFlag,
+            is_new_batsman: isNewBatsman,
+            bowler_over_number: bowlerOverNumber,
+            next_ball_runs: 0,
+            next_ball_wicket: 0,
+            next_ball_boundary: 0,
+            next_over_runs: 0,
+            match_id: match.info?.match_id || 'unknown',
+            team: inning.team || 'unknown',
+            batsman,
+            bowler,
+            venue: match.info?.venue || 'Unknown'
+        };
+    }
+
+    function calculateInningsTotal(inning) {
+        return (inning.overs || []).reduce((total, over) => {
+            return total + (over.deliveries || []).reduce((s, d) => s + (d.runs?.total || 0), 0);
+        }, 0);
+    }
+
+    function processFinalStats() {
+        displayStatistics();
+    }
+
+    function displayStatistics() {
+        const { teamStats, venueStats, overStats, allScores } = analysisData;
+        const avg = arr => arr.length ? (arr.reduce((a,b) => a+b, 0) / arr.length).toFixed(1) : '0';
+
+        safeSetText('totalMatches', uploadedFiles.length.toLocaleString());
+        safeSetText('totalTeams', Object.keys(teamStats).length);
+        safeSetText('totalVenues', Object.keys(venueStats).length);
+        safeSetText('avgScore', avg(allScores));
+        safeSetText('highScore', allScores.length ? Math.max(...allScores) : 0);
+        safeSetText('lowScore', allScores.length ? Math.min(...allScores) : 0);
+
+        [6, 10, 15, 20].forEach(m => {
+            safeSetText(`avg${m}`, avg(overStats[m]));
+            const range = overStats[m].length ? `${Math.min(...overStats[m])}-${Math.max(...overStats[m])}` : '0-0';
+            safeSetText(`range${m}`, range);
+        });
+
+        displayTeamRankings();
+        displayVenueStats();
+    }
+
+    function displayTeamRankings() {
+        const { teamStats } = analysisData;
+        const avg = arr => arr.length ? (arr.reduce((a,b) => a+b, 0) / arr.length).toFixed(1) : '0';
+        const rankings = Object.entries(teamStats)
+            .map(([team, overs]) => ({ team, avg20: parseFloat(avg(overs[20])), overs }))
+            .sort((a, b) => b.avg20 - a.avg20);
+
+        safeSetHTML('teamRankings', rankings.map((t, i) => `
+            <div class="team-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; color: #667eea;">#${i+1} ${t.team}</h3>
+                    <span style="font-size: 1.5em; font-weight: bold; color: #764ba2;">${t.avg20}</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 0.9em;">
+                    ${[6, 10, 15, 20].map(m => `
+                        <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
+                            <div style="color: #667eea; font-weight: 600;">${m} Overs</div>
+                            <div style="font-weight: bold; margin-top: 5px;">${avg(t.overs[m])}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="margin-top: 10px; color: #666; font-size: 0.9em;">
+                    Innings Played: ${t.overs[20].length}
+                </div>
+            </div>
+        `).join(''));
+    }
+
+    function displayVenueStats() {
+        const { venueStats } = analysisData;
+        const avg = arr => arr.length ? (arr.reduce((a,b) => a+b, 0) / arr.length).toFixed(1) : '0';
+        safeSetHTML('venueStats', Object.entries(venueStats).map(([venue, innings]) => {
+            const scores20 = innings.map(i => i.runs[20]);
+            const scores6 = innings.map(i => i.runs[6]);
+            const scores10 = innings.map(i => i.runs[10]);
+            const scores15 = innings.map(i => i.runs[15]);
+            return `
+                <div class="team-card">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">📍 ${venue}</h3>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 0.9em;">
+                        ${[
+                            {m: 6, d: scores6},
+                            {m: 10, d: scores10},
+                            {m: 15, d: scores15},
+                            {m: 20, d: scores20}
+                        ].map(({m, d}) => `
+                            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
+                                <div style="color: #667eea; font-weight: 600;">${m} Overs</div>
+                                <div style="font-weight: bold; margin-top: 5px;">${avg(d)}</div>
+                                <div style="font-size: 0.8em; color: #999; margin-top: 3px;">
+                                    ${d.length ? Math.min(...d) : 0}-${d.length ? Math.max(...d) : 0}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="margin-top: 10px; color: #666; font-size: 0.9em;">
+                        Total Innings: ${innings.length}
+                    </div>
+                </div>
+            `;
+        }).join(''));
+    }
+
+    function populateFilters() {
+        const { teamStats, venueStats } = analysisData;
+        const teams = Object.keys(teamStats).sort();
+        const venues = Object.keys(venueStats).sort();
+
+        safeSetHTML('teamFilter', 
+            '<option value="all">All Teams</option>' + 
+            teams.map(t => `<option value="${t}">${t}</option>`).join('')
+        );
+        safeSetHTML('venueFilter',
+            '<option value="all">All Venues</option>' +
+            venues.map(v => `<option value="${v}">${v}</option>`).join('')
+        );
+    }
+
+    function applyFilters() {
+        // Optional: implement later
+    }
+
+    function createCharts() {
+        const { teamStats, overStats, overRuns, scoreAt10 } = analysisData;
+        const avg = arr => arr.length ? (arr.reduce((a,b) => a+b, 0) / arr.length).toFixed(1) : 0;
+
+        const progressionCtx = document.getElementById('progressionChart')?.getContext('2d');
+        if (progressionCtx) {
+            new Chart(progressionCtx, {
+                type: 'line',
+                data: {
+                    labels: ['6 Overs', '10 Overs', '15 Overs', '20 Overs'],
+                    datasets: [{
+                        label: 'Average Score',
+                        data: [avg(overStats[6]), avg(overStats[10]), avg(overStats[15]), avg(overStats[20])],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true }, title: { display: true, text: 'Run Progression' } },
+                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Runs' } } }
+                }
+            });
+        }
+
+        const teamCtx = document.getElementById('teamChart')?.getContext('2d');
+        if (teamCtx) {
+            const teams = Object.keys(teamStats).slice(0, 10);
+            new Chart(teamCtx, {
+                type: 'bar',
+                data: {
+                    labels: teams,
+                    datasets: [
+                        { label: 'Powerplay (6 overs)', data: teams.map(t => avg(teamStats[t][6])), backgroundColor: 'rgba(102, 126, 234, 0.8)' },
+                        { label: 'Final Score (20 overs)', data: teams.map(t => avg(teamStats[t][20])), backgroundColor: 'rgba(118, 75, 162, 0.8)' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true }, title: { display: true, text: 'Team Performance' } },
+                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Average Runs' } } }
+                }
+            });
+        }
+
+        const winProbCtx = document.getElementById('winProbChart')?.getContext('2d');
+        if (winProbCtx) {
+            const bins = {};
+            for (let score = 30; score <= 120; score += 5) {
+                bins[score] = { total: 0, wins: 0 };
+            }
+            scoreAt10.forEach(({ score, won }) => {
+                const bin = Math.floor(score / 5) * 5;
+                if (bins[bin] !== undefined) {
+                    bins[bin].total++;
+                    if (won) bins[bin].wins++;
+                }
+            });
+            const winProbData = Object.entries(bins)
+                .filter(([_, v]) => v.total > 5)
+                .map(([score, v]) => ({
+                    x: parseInt(score),
+                    y: v.total > 0 ? Math.round((v.wins / v.total) * 100) : 0
+                }))
+                .sort((a, b) => a.x - b.x);
+
+            new Chart(winProbCtx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Win Probability (%)',
+                        data: winProbData,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true }, title: { display: true, text: 'Win Probability vs Score at 10 Overs' } },
+                    scales: {
+                        x: { title: { display: true, text: 'Score at 10 Overs' }, min: 30, max: 120 },
+                        y: { title: { display: true, text: 'Win Probability (%)' }, min: 0, max: 100 }
+                    }
+                }
+            });
+        }
+
+        const heatmapCtx = document.getElementById('heatmapChart')?.getContext('2d');
+        if (heatmapCtx) {
+            // const heatmapData = [];
+            // for (let over = 1; over <= 20; over++) {
+            //     const avgRuns = avg(analysisData.overRuns[over - 1]);
+            //     heatmapData.push({ x: over, y: 'All Matches', v: parseFloat(avgRuns) });
+            // }
+            // new Chart(heatmapCtx, {
+            //     type: 'heatmap',
+            //     data: {
+            //         datasets: [{
+            //             label: 'Avg Runs per Over',
+            //             data: heatmapData,
+            //             backgroundColor: (ctx) => {
+            //                 const value = ctx.dataset.data[ctx.dataIndex].v;
+            //                 const intensity = Math.min(1, value / 12);
+            //                 return `rgba(255, ${255 - intensity * 150}, 0, ${0.3 + intensity * 0.7})`;
+            //             },
+            //             borderWidth: 1,
+            //             borderColor: 'rgba(0,0,0,0.1)'
+            //         }]
+            //     },
+            //     options: {
+            //         responsive: true,
+            //         maintainAspectRatio: false,
+            //         plugins: { legend: { display: false }, title: { display: true, text: 'Scoring Intensity by Over' } },
+            //         scales: {
+            //             x: {
+            //                 type: 'linear',
+            //                 position: 'bottom',
+            //                 title: { display: true, text: 'Over' },
+            //                 min: 1,
+            //                 max: 20,
+            //                 ticks: { stepSize: 1 }
+            //             },
+            //             y: {
+            //                 type: 'category',
+            //                 labels: ['All Matches'],
+            //                 title: { display: true, text: 'Matches' }
+            //             }
+            //         }
+            //     }
+            // });
+        }
+    }
+
+    async function fetchWeather(venue) {
+        const apiKeyEl = document.getElementById('weatherApiKey');
+        const apiKey = apiKeyEl?.value.trim();
+        if (!apiKey) return;
+        if (WEATHER_CACHE.has(venue)) {
+            displayWeather(WEATHER_CACHE.get(venue));
+            return;
+        }
+        try {
+            const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(venue)}&appid=${apiKey}&units=metric`);
+            if (res.ok) {
+                const data = await res.json();
+                WEATHER_CACHE.set(venue, data);
+                displayWeather(data);
+            }
+        } catch (e) {
+            console.warn('Weather error:', e);
+        }
+    }
+
+    function displayWeather(data) {
+        const weatherCard = document.getElementById('weatherCard');
+        const weatherGrid = document.getElementById('weatherGrid');
+        if (weatherCard && weatherGrid) {
+            weatherCard.style.display = 'block';
+            weatherGrid.innerHTML = `
+                <div class="weather-item"><div>🌡️ Temperature</div><div class="weather-value">${data.main.temp}°C</div></div>
+                <div class="weather-item"><div>☁️ Condition</div><div class="weather-value">${data.weather[0].main}</div></div>
+                <div class="weather-item"><div>💨 Wind</div><div class="weather-value">${data.wind.speed} m/s</div></div>
+                <div class="weather-item"><div>💧 Humidity</div><div class="weather-value">${data.main.humidity}%</div></div>
+                <div class="weather-item"><div>📍 Location</div><div class="weather-value">${data.name}</div></div>
+            `;
+        }
+    }
+
+    function exportStatistics() {
+        const { teamStats, venueStats } = analysisData;
+        const avg = arr => arr.length ? (arr.reduce((a,b) => a+b, 0) / arr.length).toFixed(2) : '0';
+        let csv = 'Cricket Statistics Report\nTEAM STATISTICS\nTeam,6 Overs Avg,10 Overs Avg,15 Overs Avg,20 Overs Avg,Innings\n';
+        Object.entries(teamStats).forEach(([team, overs]) => {
+            csv += `${team},${avg(overs[6])},${avg(overs[10])},${avg(overs[15])},${avg(overs[20])},${overs[20].length}\n`;
+        });
+        csv += '\nVENUE STATISTICS\nVenue,6 Overs Avg,10 Overs Avg,15 Overs Avg,20 Overs Avg,Innings\n';
+        Object.entries(venueStats).forEach(([venue, innings]) => {
+            const s6 = innings.map(i => i.runs[6]);
+            const s10 = innings.map(i => i.runs[10]);
+            const s15 = innings.map(i => i.runs[15]);
+            const s20 = innings.map(i => i.runs[20]);
+            csv += `${venue},${avg(s6)},${avg(s10)},${avg(s15)},${avg(s20)},${innings.length}\n`;
+        });
+        downloadCSV(csv, 'cricket_statistics.csv');
+    }
+
+    function exportMLData() {
+        if (mlFeatures.length === 0) return alert('No ML features generated!');
+        const headers = Object.keys(mlFeatures[0]).join(',');
+        const rows = mlFeatures.map(f => 
+            Object.values(f).map(v => typeof v === 'string' && v.includes(',') ? `"${v}"` : v).join(',')
+        );
+        const csv = headers + '\n' + rows.join('\n');
+        downloadCSV(csv, `cricket_ml_features_${mlFeatures.length}_rows.csv`);
+        alert(`✅ Exported ${mlFeatures.length.toLocaleString()} rows!`);
+    }
+
+    function downloadCSV(content, filename) {
+        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle('dark-mode');
+    }
+
+    // Attach toggleTheme globally
+    window.toggleTheme = toggleTheme;
+});
+</script>
+</body>
+</html>
